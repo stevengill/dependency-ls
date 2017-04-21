@@ -1,51 +1,38 @@
-var spawn = require('child_process').spawn
-var Q = require('q')
+var exec = require('child_process').exec;
+var Q = require('q');
 
 var REGEX = {
-  'package': /^([│ ]*)[└├]─+┬?\s+(.*)@(.*)$/,
+  package: /^([│ ]*)[└├+`][─-]+┬?\s+(.*)@(.*)$/,
   invalid: /^(.*)\s+invalid$/,
   unmet: /^.*UNMET DEPENDENCY\s+(.*)$/,
   version: /^([\d.]*)(?:\s+->\s+(.*))$/
 }
 
 function cleanup(arr) {
-    for(var i = 0; i < arr.length; i++) {
-        if(!arr[i]) {
+    for (var i = 0; i < arr.length; i++) {
+        if (!arr[i]) {
             arr.splice(i, 1);
-            --i
+            --i;
         }
     }
     return arr;
 }
 
-module.exports = function(directory) {
-    opts = {} 
-    opts.cwd = directory
-    var capturedOut = ''
-    var capturedErr = ''
+module.exports = function (directory) {
+    opts = {};
+    opts.cwd = directory;
     var d = Q.defer();
 
-    var ls = spawn('npm',['ls', '--depth=0'], opts)
-
-    ls.stdout.on('data', function(data) {
-        capturedOut += data    
-    })
-
-    ls.stderr.on('data', function(data) {
-        capturedErr += data
-    })
-
-    ls.on('error', function(error) {
-        return Q.reject(error);
-    });
-
-    ls.on('close', function(code) { 
+    var ls = exec('npm ls --depth=0', opts, function (error, stdout, stderr) {
+        if (error) {
+            d.reject(error);
+        }
         var pkgs = {};
-        var deps = cleanup(capturedOut.split('\n'));
-          
-        deps.forEach(function(dep) {
+        var deps = cleanup(stdout.split('\n'));
+
+        deps.forEach(function (dep) {
             var pkgMatches = dep.match(REGEX.package);
-            
+
             if (pkgMatches) {
   
                 //tempArr = [bars, name, version]
@@ -64,8 +51,8 @@ module.exports = function(directory) {
 
                 // Check for UNMET dependencies
                 if (unmetMatches) {
-                    name = unmetMatches[1]
-                    version = 'UNMET'
+                    name = unmetMatches[1];
+                    version = 'UNMET';
                 }
 
                 // Check for linked packages
@@ -76,7 +63,8 @@ module.exports = function(directory) {
                 pkgs[name] = version;
             }
         });
-        d.resolve(pkgs)
+        d.resolve(pkgs);
     });
-    return d.promise           
+
+    return d.promise;
 }

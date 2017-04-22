@@ -2,7 +2,7 @@ var spawn = require('child_process').spawn
 var Q = require('q')
 
 var REGEX = {
-  'package': /^([│ ]*)[└├]─+┬?\s+(.*)@(.*)$/,
+  package: /^([│ ]*)[└├+`][─-]+┬?\s+(.*)@(.*)$/,
   invalid: /^(.*)\s+invalid$/,
   unmet: /^.*UNMET DEPENDENCY\s+(.*)$/,
   version: /^([\d.]*)(?:\s+->\s+(.*))$/
